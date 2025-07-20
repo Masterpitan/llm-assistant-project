@@ -15,7 +15,7 @@ export class AmplifyChatuiStack extends cdk.Stack {
     super(scope, id, props);
 
     // -------------------------------------------------------------------------
-    // Load SSM parameter that stores the Lambda function name
+    // Load SSM parameter that stores the Lambda function name and deploy it
 
     const cognito_user_pool_id_parameter = ssm.StringParameter.valueForStringParameter(
       this, "/AgenticLLMAssistantWorkshop/cognito_user_pool_id"
