@@ -7,6 +7,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import path = require('path');
 
 export class AmplifyChatuiStack extends cdk.Stack {
@@ -31,8 +32,27 @@ export class AmplifyChatuiStack extends cdk.Stack {
 
     // -------------------------------------------------------------------------
 
+    // Create an IAM role for Amplify to use during builds
+    const amplifyBuildRole = new iam.Role(this, 'AmplifyBuildRole', {
+      assumedBy: new iam.ServicePrincipal('amplify.amazonaws.com'),
+      description: 'Role for Amplify to use during builds',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess-Amplify')
+      ]
+    });
+
+    // Grant access to the GitHub token in Secrets Manager
+    const githubTokenSecret = secretsmanager.Secret.fromSecretNameV2(this, 'GitHubToken', 'llm/amplify');
+    githubTokenSecret.grantRead(amplifyBuildRole);
+
+    // Grant access to SSM parameters
+    ssm.StringParameter.fromStringParameterName(this, 'CognitoUserPoolIdParam', '/AgenticLLMAssistantWorkshop/cognito_user_pool_id').grantRead(amplifyBuildRole);
+    ssm.StringParameter.fromStringParameterName(this, 'CognitoUserPoolClientIdParam', '/AgenticLLMAssistantWorkshop/cognito_user_pool_client_id').grantRead(amplifyBuildRole);
+    ssm.StringParameter.fromStringParameterName(this, 'AgentApiParam', '/AgenticLLMAssistantWorkshop/agent_api').grantRead(amplifyBuildRole);
+
     // Use GitHub as the source code provider
     const amplifyChatUI = new amplify.App(this, 'AmplifyNextJsChatUI', {
+      role: amplifyBuildRole, // Assign the IAM role to Amplify
       appName: 'AmplifyNextJsChatUI',  // Explicitly set the app name
       autoBranchDeletion: true,
       sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
