@@ -32,23 +32,11 @@ export class AmplifyChatuiStack extends cdk.Stack {
 
     // -------------------------------------------------------------------------
 
-    // Create an IAM role for Amplify to use during builds
-    const amplifyBuildRole = new iam.Role(this, 'AmplifyBuildRole', {
-      assumedBy: new iam.ServicePrincipal('amplify.amazonaws.com'),
-      description: 'Role for Amplify to use during builds',
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess-Amplify')
-      ]
-    });
-
-    // Grant access to the GitHub token in Secrets Manager
-    const githubTokenSecret = secretsmanager.Secret.fromSecretNameV2(this, 'GitHubToken', 'llm/amplify');
-    githubTokenSecret.grantRead(amplifyBuildRole);
-
-    // Grant access to SSM parameters
-    ssm.StringParameter.fromStringParameterName(this, 'CognitoUserPoolIdParam', '/AgenticLLMAssistantWorkshop/cognito_user_pool_id').grantRead(amplifyBuildRole);
-    ssm.StringParameter.fromStringParameterName(this, 'CognitoUserPoolClientIdParam', '/AgenticLLMAssistantWorkshop/cognito_user_pool_client_id').grantRead(amplifyBuildRole);
-    ssm.StringParameter.fromStringParameterName(this, 'AgentApiParam', '/AgenticLLMAssistantWorkshop/agent_api').grantRead(amplifyBuildRole);
+    // Use an existing IAM role that we'll create manually in the console
+    const amplifyBuildRole = iam.Role.fromRoleArn(this, 'AmplifyBuildRole', 
+      'arn:aws:iam::791214538756:role/AmplifyBuildRole', 
+      { mutable: false }
+    );
 
     // Use GitHub as the source code provider
     const amplifyChatUI = new amplify.App(this, 'AmplifyNextJsChatUI', {
