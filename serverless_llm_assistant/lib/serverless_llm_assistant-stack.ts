@@ -106,12 +106,8 @@ export class ServerlessLlmAssistantStack extends cdk.Stack {
     );
 
     // -----------------------------------------------------------------------
+    // Always use DEFAULT network mode when not in SageMaker
     var currentNetworkMode = NetworkMode.DEFAULT;
-    // if you run the cdk stack in SageMaker editor, you need to pass --network sagemaker
-    // for docker build to work. The following achieve that.
-    if (process.env.SAGEMAKER_APP_TYPE) {
-      currentNetworkMode = NetworkMode.custom("sagemaker");
-    }
 
     // Add AWS Lambda container and function to serve as the agent executor.
     const agent_executor_lambda = new lambda.DockerImageFunction(
