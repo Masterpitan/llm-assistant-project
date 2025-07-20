@@ -33,7 +33,7 @@ export class AmplifyChatuiStack extends cdk.Stack {
 
     // Use GitHub as the source code provider
     const amplifyChatUI = new amplify.App(this, 'AmplifyNextJsChatUI', {
-      appName: 'AmplifyNextJsChatUI-GitHub',  // Explicitly set the app name
+      appName: 'AmplifyNextJsChatUI',  // Explicitly set the app name
       autoBranchDeletion: true,
       sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
         owner: 'Masterpitan', // Your GitHub username
@@ -42,14 +42,18 @@ export class AmplifyChatuiStack extends cdk.Stack {
       }),
       // enable server side rendering
       platform: amplify.Platform.WEB_COMPUTE,
-      // Specify the subdirectory that contains the Next.js application
+      // Specify the buildSpec with improved directory handling
       buildSpec: cdk.aws_codebuild.BuildSpec.fromObjectToYaml({
         version: '1.0',
         frontend: {
           phases: {
             preBuild: {
               commands: [
-                'cd frontend/chat-app',  // Navigate to the chat-app directory
+                'echo "Current directory: $(pwd)"',
+                'ls -la',  // List files to debug
+                'cd frontend/chat-app || cd chat-app || echo "Directory not found"',
+                'echo "Now in: $(pwd)"',
+                'ls -la',  // List files again after changing directory
                 'npm ci'
               ]
             },
@@ -60,14 +64,14 @@ export class AmplifyChatuiStack extends cdk.Stack {
             }
           },
           artifacts: {
-            baseDirectory: 'frontend/chat-app/.next',
+            baseDirectory: '.next',  // Relative to where build commands run
             files: [
               '**/*'
             ]
           },
           cache: {
             paths: [
-              'frontend/chat-app/node_modules/**/*'
+              'node_modules/**/*'
             ]
           }
         }
