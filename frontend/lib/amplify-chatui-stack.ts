@@ -1,7 +1,8 @@
 import * as amplify from '@aws-cdk/aws-amplify-alpha';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import * as codecommit from 'aws-cdk-lib/aws-codecommit';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+//import * as codecommit from 'aws-cdk-lib/aws-codecommit';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
@@ -31,19 +32,45 @@ export class AmplifyChatuiStack extends cdk.Stack {
 
     // -------------------------------------------------------------------------
 
-    // create a new repository and initialize it with the chatui nextjs app source code.
-    // https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_codecommit-readme.html
-    const amplifyChatUICodeCommitRepo = new codecommit.Repository(this, 'NextJsGitRepository', {
-      repositoryName: 'nextjs-amplify-chatui',
-      description: 'A chatui with nextjs hosted on AWS Amplify.',
-      code: codecommit.Code.fromDirectory(path.join(__dirname, '../chat-app'), 'main')
-    });
-
-    // from https://docs.aws.amazon.com/cdk/api/v2/docs/aws-amplify-alpha-readme.html
+    // Use GitHub as the source code provider
     const amplifyChatUI = new amplify.App(this, 'AmplifyNextJsChatUI', {
+      appName: 'AmplifyNextJsChatUI',
       autoBranchDeletion: true,
-      sourceCodeProvider: new amplify.CodeCommitSourceCodeProvider(
-        {repository: amplifyChatUICodeCommitRepo}),
+      sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
+        owner: 'Masterpitan',
+        repository: 'llm-assistant-project',
+        oauthToken: cdk.SecretValue.secretsManager('amplify/pat')
+      }),
+      // Specify the subdirectory that contains the Next.js application
+      buildSpec: codebuild.BuildSpec.fromObjectToYaml({
+        version: '1.0',
+        frontend: {
+          phases: {
+            preBuild: {
+              commands: [
+                'cd frontend/chat-app',
+                'npm ci'
+              ]
+            },
+            build: {
+              commands: [
+                'npm run build'
+              ]
+            }
+          },
+          artifacts: {
+            baseDirectory: 'frontend/chat-app/.next',
+            files: [
+              '**/*'
+            ]
+          },
+          cache: {
+            paths: [
+              'frontend/chat-app/node_modules/**/*'
+            ]
+          }
+        }
+      }),
       // enable server side rendering
       platform: amplify.Platform.WEB_COMPUTE,
       // https://docs.aws.amazon.com/amplify/latest/userguide/environment-variables.html#amplify-console-environment-variables
