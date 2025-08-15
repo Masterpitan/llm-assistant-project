@@ -43,4 +43,7 @@ user_input = "Could you explain the transformer model?"
 
 results = call_agent_lambda(user_input, session_id)
 
+print("Full Lambda response:")
+print(json.dumps(results, indent=2))
+print("\nResponse content:")
 print(results["response"].strip())
