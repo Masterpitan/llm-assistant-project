@@ -13,7 +13,7 @@ export class SageMakerProcessor extends Construct {
    const processor_image = new DockerImageAsset(this, "processor_image", {
     assetName: "processor",
     directory: "../data_pipelines/docker",
-    networkMode: NetworkMode.custom("sagemaker")
+    networkMode: NetworkMode.DEFAULT
    })
 
     this.image = processor_image
