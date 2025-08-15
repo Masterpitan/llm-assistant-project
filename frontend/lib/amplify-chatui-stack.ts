@@ -40,6 +40,22 @@ export class AmplifyChatuiStack extends cdk.Stack {
       ]
     });
 
+    // Grant the Amplify role access to the GitHub token in Secrets Manager
+    amplifyBuildRole.addToPolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:amplify/pat*`]
+    }));
+
+    // Grant access to SSM parameters
+    amplifyBuildRole.addToPolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['ssm:GetParameter', 'ssm:GetParameters'],
+      resources: [
+        `arn:aws:ssm:${this.region}:${this.account}:parameter/AgenticLLMAssistantWorkshop/*`
+      ]
+    }));
+
     // Use GitHub as the source code provider
     const amplifyChatUI = new amplify.App(this, 'AmplifyNextJsChatUI', {
       appName: 'AmplifyNextJsChatUI',
