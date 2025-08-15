@@ -31,11 +31,20 @@ export class AmplifyChatuiStack extends cdk.Stack {
     );
 
     // -------------------------------------------------------------------------
+    // Create an IAM role for Amplify to use during builds
+    const amplifyBuildRole = new iam.Role(this, 'AmplifyBuildRole', {
+      assumedBy: new iam.ServicePrincipal('amplify.amazonaws.com'),
+      description: 'Role for Amplify to use during builds',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess-Amplify')
+      ]
+    });
 
     // Use GitHub as the source code provider
     const amplifyChatUI = new amplify.App(this, 'AmplifyNextJsChatUI', {
       appName: 'AmplifyNextJsChatUI',
       autoBranchDeletion: true,
+      role: amplifyBuildRole,
       sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
         owner: 'Masterpitan',
         repository: 'llm-assistant-project',
